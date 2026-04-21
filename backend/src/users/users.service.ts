@@ -92,7 +92,6 @@ export class UsersService {
   }
 
   private toSafeUser = (user: User): SafeUser => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _password, ...safe } = user;
     return safe;
   };
