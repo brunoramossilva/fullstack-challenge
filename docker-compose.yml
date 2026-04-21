@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:15
+    container_name: challenge_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: challenge_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: challenge_backend
+    ports:
+      - '3001:3001'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/challenge_db
+      JWT_SECRET: supersecret
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: challenge_frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
