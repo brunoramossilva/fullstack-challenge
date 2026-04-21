@@ -19,6 +19,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/challenge_db
       JWT_SECRET: supersecret
+      PORT: 3001
     depends_on:
       - db
 
