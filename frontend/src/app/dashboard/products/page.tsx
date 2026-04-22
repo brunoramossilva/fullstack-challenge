@@ -191,20 +191,13 @@ export default function ProductsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => void handleFavorite(product.id)}
-                        className="p-1 rounded hover:bg-gray-100 transition"
-                        title={
-                          favorites.has(product.id)
-                            ? "Remover favorito"
-                            : "Favoritar"
-                        }
+                        style={{
+                          color: favorites.has(product.id) ? "red" : "gray",
+                        }}
+                        className="p-1 rounded transition"
+                        title="Favoritar"
                       >
-                        <Icon
-                          icon={
-                            (favorites.has(product.id)
-                              ? "favorite"
-                              : "favorite_border") as IconName
-                          }
-                        />
+                        <Icon icon={"favorite" as IconName} />
                       </button>
 
                       <button
