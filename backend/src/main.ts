@@ -1,6 +1,7 @@
 ﻿import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
 import { AppModule } from './app.module';
 
@@ -23,6 +24,31 @@ async function bootstrap() {
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
+  });
+
+  // Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Product Manager API')
+    .setDescription(
+      'API completa do sistema de gerenciamento de produtos, categorias e usuários.',
+    )
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Insira o token JWT obtido em /auth/login',
+      },
+      'JWT',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
   });
 
   const port = process.env.PORT ?? 3001;

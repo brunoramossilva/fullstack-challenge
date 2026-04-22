@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../auth/types/jwt-payload.interface';
@@ -20,6 +21,8 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 type AuthenticatedRequest = Request & { user: JwtPayload };
 
 @Controller('categories')
+@ApiTags('Categories')
+@ApiBearerAuth('JWT')
 @UseGuards(JwtAuthGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
