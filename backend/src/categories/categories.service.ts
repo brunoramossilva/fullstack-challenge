@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Category } from '@prisma/client';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   async findAll(params: {
     page?: number;
@@ -52,18 +56,50 @@ export class CategoriesService {
   }
 
   async create(dto: CreateCategoryDto, ownerId: string): Promise<Category> {
-    return this.prisma.category.create({
+    const category = await this.prisma.category.create({
       data: { name: dto.name, ownerId },
     });
+
+    await this.auditLog.log({
+      action: 'CREATE',
+      entity: 'Category',
+      entityId: category.id,
+      performedBy: ownerId,
+    });
+
+    return category;
   }
 
-  async update(id: string, dto: UpdateCategoryDto): Promise<Category> {
+  async update(
+    id: string,
+    dto: UpdateCategoryDto,
+    performedBy: string,
+  ): Promise<Category> {
     await this.findOne(id);
-    return this.prisma.category.update({ where: { id }, data: dto });
+    const category = await this.prisma.category.update({
+      where: { id },
+      data: dto,
+    });
+
+    await this.auditLog.log({
+      action: 'UPDATE',
+      entity: 'Category',
+      entityId: id,
+      performedBy,
+    });
+
+    return category;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, performedBy: string): Promise<void> {
     await this.findOne(id);
     await this.prisma.category.delete({ where: { id } });
+
+    await this.auditLog.log({
+      action: 'DELETE',
+      entity: 'Category',
+      entityId: id,
+      performedBy,
+    });
   }
 }
