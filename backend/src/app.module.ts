@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { UploadModule } from './upload/upload.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UploadModule } from './upload/upload.module';
     ProductsModule,
     AuditLogModule,
     UploadModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
