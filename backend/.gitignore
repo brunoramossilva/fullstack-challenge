@@ -19,7 +19,7 @@ lerna-debug.log*
 /coverage
 /.nyc_output
 
-# IDEs and editors
+# IDEs
 /.idea
 .project
 .classpath
@@ -56,3 +56,7 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# Uploaded files
+/uploads/*
+!/uploads/.gitkeep
