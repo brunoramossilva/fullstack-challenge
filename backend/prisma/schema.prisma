@@ -25,6 +25,7 @@ model User {
   categories Category[]
   favorites  Favorite[]
   auditLogs  AuditLog[]
+  notifications Notification[]
 }
 
 model Category {
@@ -68,6 +69,15 @@ model Favorite {
   productId String
 
   @@id([userId, productId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  read      Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model AuditLog {
