@@ -6,10 +6,11 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Button,
   Card,
-  Chip,
+  Icon,
   InputText,
   Paginator,
   Typography,
+  type IconName,
 } from "@uigovpe/components";
 import api, { resolveApiAssetUrl } from "@/lib/api";
 import type { PaginatedResponse, User } from "@/types";
@@ -42,11 +43,20 @@ export default function UsersPage() {
     setPage(1);
     setSearch(searchInput);
   }
-
   function handleClear() {
     setSearchInput("");
     setSearch("");
     setPage(1);
+  }
+
+  async function handleDelete(userId: string) {
+    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+    try {
+      await api.delete(`/users/${userId}`);
+      void loadUsers();
+    } catch {
+      alert("Erro ao excluir usuário.");
+    }
   }
 
   return (
@@ -99,13 +109,16 @@ export default function UsersPage() {
                 <th className="pb-3 font-semibold dashboard-text-secondary hidden md:table-cell">
                   Criado em
                 </th>
+                <th className="pb-3 font-semibold dashboard-text-secondary">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={3}
+                    colSpan={4}
                     className="py-8 text-center dashboard-text-muted"
                   >
                     Nenhum usuário encontrado.
@@ -143,17 +156,30 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td className="py-3 pr-4 hidden sm:table-cell">
-                    <Chip
-                      label={user.role === "ADMIN" ? "Admin" : "Usuário"}
-                      className={
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
                         user.role === "ADMIN"
                           ? "bg-purple-100 text-purple-700"
                           : "bg-gray-100 text-gray-600"
-                      }
-                    />
+                      }`}
+                    >
+                      {user.role === "ADMIN" ? "Admin" : "Usuário"}
+                    </span>
                   </td>
                   <td className="py-3 hidden md:table-cell dashboard-text-muted">
                     {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+                  </td>
+                  <td className="py-3">
+                    {currentUser?.role === "ADMIN" &&
+                      user.id !== currentUser.id && (
+                        <button
+                          onClick={() => void handleDelete(user.id)}
+                          className="p-1 rounded hover:bg-red-50 transition text-red-500"
+                          title="Excluir usuário"
+                        >
+                          <Icon icon={"delete" as IconName} />
+                        </button>
+                      )}
                   </td>
                 </tr>
               ))}
