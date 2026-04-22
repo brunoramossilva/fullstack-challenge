@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -13,6 +10,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findAll(params: {
@@ -146,7 +144,7 @@ export class ProductsService {
   }
 
   async toggleFavorite(productId: string, userId: string) {
-    await this.findOne(productId);
+    const product = await this.findOne(productId);
 
     const existing = await this.prisma.favorite.findUnique({
       where: { userId_productId: { userId, productId } },
@@ -160,6 +158,17 @@ export class ProductsService {
     }
 
     await this.prisma.favorite.create({ data: { userId, productId } });
+
+    if (product.ownerId !== userId) {
+      const actor = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      await this.notifications.create(
+        product.ownerId,
+        `${actor?.name ?? 'Alguém'} favoritou seu produto "${product.name}"`,
+      );
+    }
+
     return { favorited: true };
   }
 
