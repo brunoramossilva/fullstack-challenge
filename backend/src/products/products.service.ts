@@ -1,11 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   async findAll(params: {
     page?: number;
@@ -67,7 +75,7 @@ export class ProductsService {
   async create(dto: CreateProductDto, ownerId: string) {
     const { categoryIds, ...data } = dto;
 
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
         ...data,
         ownerId,
@@ -77,13 +85,20 @@ export class ProductsService {
           },
         }),
       },
-      include: {
-        categories: { include: { category: true } },
-      },
+      include: { categories: { include: { category: true } } },
     });
+
+    await this.auditLog.log({
+      action: 'CREATE',
+      entity: 'Product',
+      entityId: product.id,
+      performedBy: ownerId,
+    });
+
+    return product;
   }
 
-  async update(id: string, dto: UpdateProductDto) {
+  async update(id: string, dto: UpdateProductDto, performedBy: string) {
     await this.findOne(id);
     const { categoryIds, ...data } = dto;
 
@@ -93,7 +108,7 @@ export class ProductsService {
       });
     }
 
-    return this.prisma.product.update({
+    const product = await this.prisma.product.update({
       where: { id },
       data: {
         ...data,
@@ -103,17 +118,31 @@ export class ProductsService {
           },
         }),
       },
-      include: {
-        categories: { include: { category: true } },
-      },
+      include: { categories: { include: { category: true } } },
     });
+
+    await this.auditLog.log({
+      action: 'UPDATE',
+      entity: 'Product',
+      entityId: id,
+      performedBy,
+    });
+
+    return product;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, performedBy: string): Promise<void> {
     await this.findOne(id);
     await this.prisma.productCategory.deleteMany({ where: { productId: id } });
     await this.prisma.favorite.deleteMany({ where: { productId: id } });
     await this.prisma.product.delete({ where: { id } });
+
+    await this.auditLog.log({
+      action: 'DELETE',
+      entity: 'Product',
+      entityId: id,
+      performedBy,
+    });
   }
 
   async toggleFavorite(productId: string, userId: string) {

@@ -48,12 +48,16 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
-    return this.categoriesService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCategoryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.categoriesService.update(id, dto, req.user.userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.categoriesService.remove(id);
+  remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.categoriesService.remove(id, req.user.userId);
   }
 }
