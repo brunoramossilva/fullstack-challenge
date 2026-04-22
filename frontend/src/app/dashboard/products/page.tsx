@@ -148,13 +148,15 @@ export default function ProductsPage() {
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-3">
                       {product.imageUrl ? (
-                        <img
-                          src={resolveApiAssetUrl(product.imageUrl)}
-                          alt={product.name}
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                          <img
+                            src={resolveApiAssetUrl(product.imageUrl)}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg dashboard-avatar-fallback flex items-center justify-center">
+                        <div className="h-14 w-14 shrink-0 rounded-xl dashboard-avatar-fallback flex items-center justify-center">
                           <span className="material-icons dashboard-avatar-fallback-text text-base">
                             inventory_2
                           </span>
@@ -194,27 +196,30 @@ export default function ProductsPage() {
                         style={{
                           color: favorites.has(product.id) ? "red" : "gray",
                         }}
-                        className="p-1 rounded transition"
+                        className="cursor-pointer p-1 rounded transition"
                         title="Favoritar"
                       >
                         <Icon icon={"favorite" as IconName} />
                       </button>
 
-                      <button
-                        onClick={() =>
-                          router.push(`/dashboard/products/${product.id}/edit`)
-                        }
-                        className="p-1 rounded hover:bg-gray-100 transition"
-                        title="Editar"
-                      >
-                        <Icon icon={"edit" as IconName} />
-                      </button>
+                      {currentUser?.id === product.ownerId && (
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/products/${product.id}/edit`,
+                            )
+                          }
+                          className="cursor-pointer p-1 rounded hover:bg-gray-100 transition"
+                          title="Editar"
+                        >
+                          <Icon icon={"edit" as IconName} />
+                        </button>
+                      )}
 
-                      {(currentUser?.id === product.ownerId ||
-                        currentUser?.role === "ADMIN") && (
+                      {currentUser?.id === product.ownerId && (
                         <button
                           onClick={() => void handleDelete(product.id)}
-                          className="p-1 rounded hover:bg-red-50 transition text-red-500"
+                          className="cursor-pointer p-1 rounded hover:bg-red-50 transition text-red-500"
                           title="Excluir"
                         >
                           <Icon icon={"delete" as IconName} />

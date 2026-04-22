@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import {
   Typography,
 } from "@uigovpe/components";
 import api from "@/lib/api";
+import type { Category, PaginatedResponse } from "@/types";
 
 const schema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
@@ -24,6 +25,10 @@ type FormData = z.infer<typeof schema>;
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [error, setError] = useState("");
 
   const {
@@ -34,11 +39,54 @@ export default function NewProductPage() {
     resolver: zodResolver(schema),
   });
 
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const { data } = await api.get<PaginatedResponse<Category>>(
+          "/categories",
+          {
+            params: { limit: 1000 },
+          },
+        );
+        setCategories(data.data);
+      } catch {
+        setError("Erro ao carregar categorias.");
+      } finally {
+        setLoadingCategories(false);
+      }
+    }
+
+    void loadCategories();
+  }, []);
+
+  function toggleCategory(categoryId: string) {
+    setSelectedCategoryIds((current) =>
+      current.includes(categoryId)
+        ? current.filter((id) => id !== categoryId)
+        : [...current, categoryId],
+    );
+  }
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     setError("");
     try {
-      await api.post("/products", data);
+      const payload = {
+        ...data,
+        categoryIds: selectedCategoryIds,
+      };
+
+      const { data: product } = await api.post<{ id: string }>(
+        "/products",
+        payload,
+      );
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        await api.post(`/upload/product/${product.id}/image`, formData);
+      }
+
       router.push("/dashboard/products");
     } catch {
       setError("Erro ao criar produto.");
@@ -95,6 +143,51 @@ export default function NewProductPage() {
                   />
                 )}
               />
+            </div>
+            <div className="w-full max-w-lg">
+              <label className="mb-2 block text-sm font-medium dashboard-text-secondary">
+                Imagem do produto
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) =>
+                  setImageFile(event.target.files?.[0] ?? null)
+                }
+                className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dashboard-text-primary file:mr-4 file:rounded-md file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white cursor-pointer"
+              />
+            </div>
+
+            <div className="w-full max-w-lg">
+              <p className="mb-2 text-sm font-medium dashboard-text-secondary">
+                Categorias
+              </p>
+              {loadingCategories ? (
+                <p className="text-sm dashboard-text-muted">
+                  Carregando categorias...
+                </p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {categories.map((category) => (
+                    <label
+                      key={category.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm dashboard-text-primary"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCategoryIds.includes(category.id)}
+                        onChange={() => toggleCategory(category.id)}
+                      />
+                      {category.name}
+                    </label>
+                  ))}
+                  {categories.length === 0 && (
+                    <p className="text-sm dashboard-text-muted">
+                      Nenhuma categoria cadastrada.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex gap-3 mt-2">
               <Button

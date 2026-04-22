@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -70,6 +74,20 @@ export class ProductsService {
     return product;
   }
 
+  private async ensureOwner(productId: string, userId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, ownerId: true },
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.ownerId !== userId) {
+      throw new ForbiddenException('You can only edit your own products');
+    }
+
+    return product;
+  }
+
   async create(dto: CreateProductDto, ownerId: string) {
     const { categoryIds, ...data } = dto;
 
@@ -97,7 +115,7 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto, performedBy: string) {
-    await this.findOne(id);
+    await this.ensureOwner(id, performedBy);
     const { categoryIds, ...data } = dto;
 
     if (categoryIds !== undefined) {
@@ -130,7 +148,7 @@ export class ProductsService {
   }
 
   async remove(id: string, performedBy: string): Promise<void> {
-    await this.findOne(id);
+    await this.ensureOwner(id, performedBy);
     await this.prisma.productCategory.deleteMany({ where: { productId: id } });
     await this.prisma.favorite.deleteMany({ where: { productId: id } });
     await this.prisma.product.delete({ where: { id } });

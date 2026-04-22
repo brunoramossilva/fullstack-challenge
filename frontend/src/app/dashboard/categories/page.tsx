@@ -140,7 +140,7 @@ export default function CategoriesPage() {
                             `/dashboard/categories/${category.id}/edit`,
                           )
                         }
-                        className="p-1 rounded hover:bg-gray-100 transition"
+                        className="cursor-pointer p-1 rounded hover:bg-gray-100 transition"
                         title="Editar"
                       >
                         <Icon icon="edit" />
@@ -149,7 +149,7 @@ export default function CategoriesPage() {
                         currentUser?.role === "ADMIN") && (
                         <button
                           onClick={() => handleDelete(category.id)}
-                          className="p-1 rounded hover:bg-red-50 transition text-red-500"
+                          className="cursor-pointer p-1 rounded hover:bg-red-50 transition text-red-500"
                           title="Excluir"
                         >
                           <Icon icon="delete" />
