@@ -1,8 +1,26 @@
 import axios from "axios";
 
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
+  baseURL: API_BASE_URL,
 });
+
+export function resolveApiAssetUrl(assetPath?: string | null) {
+  if (!assetPath) return "";
+
+  if (/^https?:\/\//i.test(assetPath)) {
+    return assetPath;
+  }
+
+  const normalizedBaseUrl = API_BASE_URL.replace(/\/+$/, "");
+  const normalizedAssetPath = assetPath.startsWith("/")
+    ? assetPath
+    : `/${assetPath}`;
+
+  return `${normalizedBaseUrl}${normalizedAssetPath}`;
+}
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {

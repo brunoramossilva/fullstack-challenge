@@ -47,7 +47,12 @@ export class UploadController {
   uploadProductImage(
     @UploadedFile() file: Express.Multer.File,
     @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.uploadService.updateProductImage(id, file.filename);
+    return this.uploadService.updateProductImage(
+      id,
+      file.filename,
+      req.user.userId,
+    );
   }
 }

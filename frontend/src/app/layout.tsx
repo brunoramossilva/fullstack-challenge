@@ -18,8 +18,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet"
+        />
+      </head>
       <body className={`${inter.className} antialiased`}>
-        <LayoutProvider>
+        <LayoutProvider breakpoint={900} template="backoffice">
           <UiProvider>{children}</UiProvider>
         </LayoutProvider>
       </body>
