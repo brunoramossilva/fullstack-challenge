@@ -7,6 +7,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     CategoriesModule,
     ProductsModule,
+    AuditLogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
