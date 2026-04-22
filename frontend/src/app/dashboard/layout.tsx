@@ -11,9 +11,11 @@ import {
   MenuAction,
   type IconName,
 } from "@uigovpe/components";
+import api from "@/lib/api";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 
 const pathLabels: Record<string, string> = {
   "/dashboard": "Visão Geral",
@@ -98,30 +100,118 @@ export default function DashboardLayout({
     profile: currentUser?.role?.toLowerCase() ?? "user",
   };
 
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<
+    { id: string; message: string; read: boolean; createdAt: string }[]
+  >([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    async function loadNotifications() {
+      const { data } =
+        await api.get<
+          { id: string; message: string; read: boolean; createdAt: string }[]
+        >("/notifications");
+      setNotifications(data);
+      setUnreadCount(data.filter((n) => !n.read).length);
+    }
+    void loadNotifications();
+  }, []);
+
+  async function handleMarkAllRead() {
+    await api.patch("/notifications/read-all");
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+  }
+
   return (
-    <AppLayout>
-      <GovBar />
-      <AppLayout.MainLayout>
-        <AdminSideBar
-          theme="primary"
-          sections={sections}
-          version="1.0.0"
-          title="Product Manager"
+    <>
+      <div className="fixed bottom-6 right-4 md:bottom-8 md:right-6 z-50">
+        <button
+          onClick={() => setShowNotifications(!showNotifications)}
+          className="relative h-14 w-14 rounded-full bg-white border-2 border-gray-200 shadow-lg hover:shadow-xl hover:scale-105 transition flex items-center justify-center"
+          title="Notificações"
+          aria-label="Abrir notificações"
+        >
+          <span className="text-2xl leading-none">
+            <Icon icon={"notifications" as IconName} />
+          </span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+
+        {showNotifications && (
+          <div className="absolute bottom-16 right-0 w-80 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-xl shadow-lg">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <span className="font-semibold text-sm text-gray-700">
+                Notificações
+              </span>
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => void handleMarkAllRead()}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Marcar todas como lidas
+                </button>
+              )}
+            </div>
+            <div className="max-h-72 overflow-y-auto">
+              {notifications.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">
+                  Nenhuma notificação
+                </p>
+              )}
+              {notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={`px-4 py-3 border-b border-gray-50 text-sm ${
+                    n.read
+                      ? "text-gray-400"
+                      : "text-gray-700 font-medium bg-blue-50"
+                  }`}
+                >
+                  <p>{n.message}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(n.createdAt).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <AppLayout>
+        <GovBar
+          showCookies={false}
+          showThemeController={false}
+          showFontSizeController={true}
         />
-        <AppLayout.ContentSection>
-          <AdminUserBar
-            user={user}
-            menuActions={userMenuActions}
-            breadcrumb={breadcrumb}
+        <AppLayout.MainLayout>
+          <AdminSideBar
+            theme="primary"
+            sections={sections}
+            version="1.0.0"
+            title="Product Manager"
           />
-          <AppLayout.MainContent>
-            <AppLayout.BreadCrumbSection>
-              <BreadCrumb model={breadcrumb.items} home={breadcrumb.home} />
-            </AppLayout.BreadCrumbSection>
-            <AppLayout.PageContent>{children}</AppLayout.PageContent>
-          </AppLayout.MainContent>
-        </AppLayout.ContentSection>
-      </AppLayout.MainLayout>
-    </AppLayout>
+          <AppLayout.ContentSection>
+            <AdminUserBar
+              user={user}
+              menuActions={userMenuActions}
+              breadcrumb={breadcrumb}
+            />
+            <AppLayout.MainContent>
+              <AppLayout.BreadCrumbSection>
+                <BreadCrumb model={breadcrumb.items} home={breadcrumb.home} />
+              </AppLayout.BreadCrumbSection>
+              <AppLayout.PageContent>{children}</AppLayout.PageContent>
+            </AppLayout.MainContent>
+          </AppLayout.ContentSection>
+        </AppLayout.MainLayout>
+      </AppLayout>
+    </>
   );
 }
