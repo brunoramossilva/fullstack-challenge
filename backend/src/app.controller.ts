@@ -1,4 +1,5 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Request } from 'express';
 import { AppService } from './app.service';
@@ -10,6 +11,7 @@ import { JwtPayload } from './auth/types/jwt-payload.interface';
 type AuthenticatedRequest = Request & { user: JwtPayload };
 
 @Controller()
+@ApiTags('App')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
@@ -19,6 +21,7 @@ export class AppController {
   }
 
   @Get('protected')
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   getProtected(@Req() req: AuthenticatedRequest) {
     return {
@@ -28,6 +31,7 @@ export class AppController {
   }
 
   @Get('admin')
+  @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   getAdminRoute(@Req() req: AuthenticatedRequest) {
