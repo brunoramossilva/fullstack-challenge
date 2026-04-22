@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Enforce DTO validation for all incoming requests.
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -12,6 +12,16 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
+
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`
+🚀 Application is running!
+📦 Backend:  http://localhost:${port}
+🗄️  Database: PostgreSQL connected
+🌐 Frontend: http://localhost:3000
+  `);
 }
+
 void bootstrap();
