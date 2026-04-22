@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
     CategoriesModule,
     ProductsModule,
     AuditLogModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
