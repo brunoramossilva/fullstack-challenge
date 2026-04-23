@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/967ecfab-8c40-42f6-9bf8-29bdc92bce46" width="225" height="225" />
+</p>
+
 # 🛒 Product Manager — Avaliação Técnica Full-Stack Perpart
 
 Sistema completo de gerenciamento de produtos, categorias e usuários, desenvolvido como avaliação técnica Full-Stack. A aplicação conta com autenticação JWT, controle de acesso por perfis, auditoria de ações, upload de arquivos, notificações e interface construída com a biblioteca **UI-GovPE**.
