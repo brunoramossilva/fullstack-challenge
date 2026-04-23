@@ -63,12 +63,12 @@ export class ProductsController {
     @Body() dto: UpdateProductDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.productsService.update(id, dto, req.user.userId);
+    return this.productsService.update(id, dto, req.user.userId, req.user.role);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.productsService.remove(id, req.user.userId);
+    return this.productsService.remove(id, req.user.userId, req.user.role);
   }
 
   @Post(':id/favorite')
