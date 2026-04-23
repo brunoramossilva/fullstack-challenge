@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:15
+    container_name: challenge_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: challenge_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: challenge_backend
+    ports:
+      - '3001:3001'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/challenge_db
+      JWT_SECRET: supersecret
+      JWT_EXPIRES_IN: 7d
+      BCRYPT_SALT_ROUNDS: 10
+      PORT: 3001
+    depends_on:
+      - db
+    command: sh -c "sleep 5 && npx prisma migrate deploy && npm run seed && npm run start:prod"
+
+  frontend:
+    build: ./frontend
+    container_name: challenge_frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

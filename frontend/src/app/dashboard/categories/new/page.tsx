@@ -1,0 +1,100 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Button,
+  Card,
+  FlexContainer,
+  InputText,
+  Typography,
+} from "@uigovpe/components";
+import api from "@/lib/api";
+
+const schema = z.object({
+  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
+});
+
+type FormData = z.infer<typeof schema>;
+
+export default function NewCategoryPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  const onSubmit = async (data: FormData) => {
+    setLoading(true);
+    setError("");
+    try {
+      await api.post("/categories", data);
+      router.push("/dashboard/categories");
+    } catch {
+      setError("Erro ao criar categoria.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <section className="mb-6">
+        <Typography variant="h1" className="mb-2 dashboard-title">
+          Nova Categoria
+        </Typography>
+        <Typography variant="p" className="dashboard-subtitle">
+          Preencha os dados para cadastrar uma nova categoria
+        </Typography>
+      </section>
+
+      <Card elevation="low">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FlexContainer direction="col" gap="4" align="start">
+            {error && (
+              <div className="w-full bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+                {error}
+              </div>
+            )}
+            <div className="w-full max-w-lg">
+              <Controller
+                name="name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <InputText
+                    {...field}
+                    label="Nome"
+                    placeholder="Nome da categoria"
+                    invalid={!!errors.name}
+                    supportText={errors.name?.message}
+                  />
+                )}
+              />
+            </div>
+            <div className="flex gap-3 mt-2">
+              <Button
+                type="submit"
+                label={loading ? "Salvando..." : "Salvar"}
+                loading={loading}
+              />
+              <Button
+                label="Cancelar"
+                onClick={() => router.push("/dashboard/categories")}
+              />
+            </div>
+          </FlexContainer>
+        </form>
+      </Card>
+    </>
+  );
+}
