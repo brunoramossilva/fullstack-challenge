@@ -35,8 +35,39 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('123456', 10);
 
+  // FIXED USERS (admin + user)
+  const fixedUsers: User[] = [];
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@admin.com' },
+    update: {},
+    create: {
+      name: 'Admin',
+      email: 'admin@admin.com',
+      password: passwordHash,
+      role: Role.ADMIN,
+      avatar: 'https://i.pravatar.cc/150?img=1',
+    },
+  });
+
+  const normalUser = await prisma.user.upsert({
+    where: { email: 'user@user.com' },
+    update: {},
+    create: {
+      name: 'User',
+      email: 'user@user.com',
+      password: passwordHash,
+      role: Role.USER,
+      avatar: 'https://i.pravatar.cc/150?img=2',
+    },
+  });
+
+  fixedUsers.push(adminUser, normalUser);
+
+  console.log('🔑 Usuários fixos criados');
+
   // USERS
-  const users: User[] = [];
+  const users: User[] = [...fixedUsers];
 
   for (let i = 0; i < USERS_COUNT; i++) {
     const user = await prisma.user.create({
