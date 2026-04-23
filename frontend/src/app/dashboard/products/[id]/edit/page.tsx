@@ -52,7 +52,10 @@ export default function EditProductPage() {
       try {
         const { data: product } = await api.get<Product>(`/products/${id}`);
 
-        if (currentUser?.id !== product.ownerId) {
+        const canManageProduct =
+          currentUser?.id === product.ownerId || currentUser?.role === "ADMIN";
+
+        if (!canManageProduct) {
           setError("Você só pode editar seus próprios produtos.");
           return;
         }

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -74,15 +75,19 @@ export class ProductsService {
     return product;
   }
 
-  private async ensureOwner(productId: string, userId: string) {
+  private async ensureOwner(productId: string, userId: string, role: Role) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       select: { id: true, ownerId: true },
     });
 
     if (!product) throw new NotFoundException('Product not found');
+    if (role === 'ADMIN') {
+      return product;
+    }
+
     if (product.ownerId !== userId) {
-      throw new ForbiddenException('You can only edit your own products');
+      throw new ForbiddenException('You can only manage your own products');
     }
 
     return product;
@@ -114,8 +119,13 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, dto: UpdateProductDto, performedBy: string) {
-    await this.ensureOwner(id, performedBy);
+  async update(
+    id: string,
+    dto: UpdateProductDto,
+    performedBy: string,
+    performedByRole: Role,
+  ) {
+    await this.ensureOwner(id, performedBy, performedByRole);
     const { categoryIds, ...data } = dto;
 
     if (categoryIds !== undefined) {
@@ -147,8 +157,12 @@ export class ProductsService {
     return product;
   }
 
-  async remove(id: string, performedBy: string): Promise<void> {
-    await this.ensureOwner(id, performedBy);
+  async remove(
+    id: string,
+    performedBy: string,
+    performedByRole: Role,
+  ): Promise<void> {
+    await this.ensureOwner(id, performedBy, performedByRole);
     await this.prisma.productCategory.deleteMany({ where: { productId: id } });
     await this.prisma.favorite.deleteMany({ where: { productId: id } });
     await this.prisma.product.delete({ where: { id } });

@@ -11,6 +11,7 @@ interface LoginCredentials {
 
 interface User {
   id: string;
+  name?: string;
   email: string;
   role: "USER" | "ADMIN";
 }
@@ -36,10 +37,22 @@ export function useAuth() {
       const payload = JSON.parse(atob(token.split(".")[1])) as User & {
         userId: string;
       };
+
+      let userName: string | undefined;
+      try {
+        const { data: profile } = await api.get<{ name?: string }>(
+          `/users/${payload.userId}`,
+        );
+        userName = profile.name;
+      } catch {
+        userName = undefined;
+      }
+
       localStorage.setItem(
         "user",
         JSON.stringify({
           id: payload.userId,
+          name: userName,
           email: payload.email,
           role: payload.role,
         }),
