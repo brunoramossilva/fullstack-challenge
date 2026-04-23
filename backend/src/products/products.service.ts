@@ -126,7 +126,9 @@ export class ProductsService {
     performedByRole: Role,
   ) {
     await this.ensureOwner(id, performedBy, performedByRole);
-    const { categoryIds, ...data } = dto;
+    const { categoryIds, ...data } = dto as UpdateProductDto & {
+      categoryIds?: string[];
+    };
 
     if (categoryIds !== undefined) {
       await this.prisma.productCategory.deleteMany({
@@ -177,6 +179,7 @@ export class ProductsService {
 
   async toggleFavorite(productId: string, userId: string) {
     const product = await this.findOne(productId);
+    const productOwnerId = String(product.ownerId);
 
     const existing = await this.prisma.favorite.findUnique({
       where: { userId_productId: { userId, productId } },
@@ -191,12 +194,12 @@ export class ProductsService {
 
     await this.prisma.favorite.create({ data: { userId, productId } });
 
-    if (product.ownerId !== userId) {
+    if (productOwnerId !== userId) {
       const actor = await this.prisma.user.findUnique({
         where: { id: userId },
       });
       await this.notifications.create(
-        product.ownerId,
+        productOwnerId,
         `${actor?.name ?? 'Alguém'} favoritou seu produto "${product.name}"`,
       );
     }
@@ -204,7 +207,7 @@ export class ProductsService {
     return { favorited: true };
   }
 
-  async findFavorites(userId: string) {
+  findFavorites(userId: string) {
     return this.prisma.product.findMany({
       where: { favorites: { some: { userId } } },
       include: {

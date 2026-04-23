@@ -121,7 +121,8 @@ export class UsersService {
   }
 
   private toSafeUser = (user: User): SafeUser => {
-    const { password: _password, ...safe } = user;
-    return safe;
+    const safe: Partial<User> = { ...user };
+    delete safe.password;
+    return safe as SafeUser;
   };
 }
