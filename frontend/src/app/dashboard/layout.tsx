@@ -13,9 +13,10 @@ import {
 } from "@uigovpe/components";
 import api from "@/lib/api";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLayout, useWindowSize } from "@uigovpe/components";
 
 const pathLabels: Record<string, string> = {
   "/dashboard": "Visão Geral",
@@ -30,48 +31,86 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { logout, getUser } = useAuth();
+  const router = useRouter();
+  const { setCollapsed, breakpoint } = useLayout();
+  const { width } = useWindowSize();
   const pathname = usePathname();
   const currentUser = getUser();
 
-  const allItems = [
-    {
-      id: "dashboard",
-      label: "Visão Geral",
-      icon: "dashboard" as IconName,
-      link: "/dashboard",
-    },
-    {
-      id: "products",
-      label: "Produtos",
-      icon: "inventory_2" as IconName,
-      link: "/dashboard/products",
-    },
-    {
-      id: "categories",
-      label: "Categorias",
-      icon: "category" as IconName,
-      link: "/dashboard/categories",
-    },
-    // Only the admin can see these:
-    ...(currentUser?.role === "ADMIN"
-      ? [
-          {
-            id: "users",
-            label: "Usuários",
-            icon: "group" as IconName,
-            link: "/dashboard/users",
-          },
-          {
-            id: "audit",
-            label: "Auditoria",
-            icon: "history" as IconName,
-            link: "/dashboard/audit",
-          },
-        ]
-      : []),
-  ];
+  const allItems = useMemo(
+    () => [
+      {
+        id: "dashboard",
+        label: "Visão Geral",
+        icon: "dashboard" as IconName,
+        link: "/dashboard",
+      },
+      {
+        id: "products",
+        label: "Produtos",
+        icon: "inventory_2" as IconName,
+        link: "/dashboard/products",
+      },
+      {
+        id: "categories",
+        label: "Categorias",
+        icon: "category" as IconName,
+        link: "/dashboard/categories",
+      },
+      // Only the admin can see these:
+      ...(currentUser?.role === "ADMIN"
+        ? [
+            {
+              id: "users",
+              label: "Usuários",
+              icon: "group" as IconName,
+              link: "/dashboard/users",
+            },
+            {
+              id: "audit",
+              label: "Auditoria",
+              icon: "history" as IconName,
+              link: "/dashboard/audit",
+            },
+          ]
+        : []),
+    ],
+    [currentUser?.role],
+  );
 
   const sections = [{ id: "main", title: "Menu", items: allItems }];
+  const menuLinksById = useMemo(
+    () =>
+      allItems.reduce<Record<string, string>>((acc, item) => {
+        acc[item.id] = item.link;
+        return acc;
+      }, {}),
+    [allItems],
+  );
+
+  useEffect(() => {
+    if (width > (breakpoint ?? 900)) {
+      setCollapsed(false);
+    }
+  }, [width, breakpoint, setCollapsed]);
+
+  function handleSidebarNavigationCapture(
+    event: React.MouseEvent<HTMLDivElement>,
+  ) {
+    const target = event.target as HTMLElement;
+    const button = target.closest("button[id]") as HTMLButtonElement | null;
+    if (!button) return;
+
+    const link = menuLinksById[button.id];
+    if (!link) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (pathname !== link) {
+      router.push(link);
+    }
+  }
 
   const breadcrumb: BreadcrumbProps = {
     home: {
@@ -99,24 +138,23 @@ export default function DashboardLayout({
     currentUser?.name?.trim() ||
     currentUser?.email?.split("@")[0]?.replace(/\./g, " ") ||
     "Usuário";
-  const [displayName, setDisplayName] = useState(fallbackDisplayName);
-
-  useEffect(() => {
-    setDisplayName(fallbackDisplayName);
-  }, [fallbackDisplayName]);
+  const [profileDisplayName, setProfileDisplayName] = useState("");
+  const displayName = profileDisplayName || fallbackDisplayName;
 
   useEffect(() => {
     async function loadCurrentUserName() {
-      if (!currentUser?.id) return;
+      if (!currentUser?.id) {
+        setProfileDisplayName("");
+        return;
+      }
 
       try {
         const { data } = await api.get<{ name?: string }>(
           `/users/${currentUser.id}`,
         );
-        if (data.name?.trim()) {
-          setDisplayName(data.name.trim());
-        }
+        setProfileDisplayName(data.name?.trim() || "");
       } catch {
+        setProfileDisplayName("");
         // Mantém o fallback quando não for possível carregar o perfil.
       }
     }
@@ -220,12 +258,14 @@ export default function DashboardLayout({
           showFontSizeController={true}
         />
         <AppLayout.MainLayout>
-          <AdminSideBar
-            theme="primary"
-            sections={sections}
-            version="1.0.0"
-            title="Product Manager"
-          />
+          <div onClickCapture={handleSidebarNavigationCapture}>
+            <AdminSideBar
+              theme="primary"
+              sections={sections}
+              version="1.0.0"
+              title="Product Manager"
+            />
+          </div>
           <AppLayout.ContentSection>
             <AdminUserBar
               user={user}
@@ -236,7 +276,11 @@ export default function DashboardLayout({
               <AppLayout.BreadCrumbSection>
                 <BreadCrumb model={breadcrumb.items} home={breadcrumb.home} />
               </AppLayout.BreadCrumbSection>
-              <AppLayout.PageContent>{children}</AppLayout.PageContent>
+              <AppLayout.PageContent>
+                <div key={pathname} className="dashboard-page-transition">
+                  {children}
+                </div>
+              </AppLayout.PageContent>
             </AppLayout.MainContent>
           </AppLayout.ContentSection>
         </AppLayout.MainLayout>
