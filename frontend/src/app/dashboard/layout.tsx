@@ -128,6 +128,11 @@ export default function DashboardLayout({
 
   const userMenuActions: MenuAction = [
     {
+      label: "Perfil",
+      icon: <Icon icon="account_circle" />,
+      command: () => router.push("/dashboard/profile"),
+    },
+    {
       label: "Sair",
       icon: <Icon icon="logout" />,
       command: () => logout(),
