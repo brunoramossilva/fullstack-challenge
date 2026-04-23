@@ -75,7 +75,12 @@ export default function LoginPage() {
         </div>
 
         <Card title="Login">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit(onSubmit)(e);
+            }}
+          >
             <FlexContainer
               direction="col"
               gap="4"
