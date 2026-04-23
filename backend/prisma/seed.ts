@@ -42,7 +42,7 @@ async function main() {
     where: { email: 'admin@admin.com' },
     update: {},
     create: {
-      name: 'Admin',
+      name: 'John Doe',
       email: 'admin@admin.com',
       password: passwordHash,
       role: Role.ADMIN,
@@ -54,7 +54,7 @@ async function main() {
     where: { email: 'user@user.com' },
     update: {},
     create: {
-      name: 'User',
+      name: 'Jane Smith',
       email: 'user@user.com',
       password: passwordHash,
       role: Role.USER,
