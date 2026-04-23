@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import type { ReactNode } from "react";
 import { LayoutProvider, UiProvider } from "@uigovpe/components";
 import "@uigovpe/styles";
 import "./globals.css";
@@ -11,11 +12,7 @@ export const metadata: Metadata = {
   description: "Sistema de gerenciamento de produtos",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
