@@ -22,7 +22,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <LayoutProvider breakpoint={900} template="backoffice">
+        <LayoutProvider
+          breakpoint={900}
+          template="backoffice"
+          storageKey="dashboard-sidebar-collapsed"
+        >
           <UiProvider>{children}</UiProvider>
         </LayoutProvider>
       </body>
