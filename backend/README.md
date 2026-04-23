@@ -1,98 +1,350 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://github.com/user-attachments/assets/967ecfab-8c40-42f6-9bf8-29bdc92bce46" width="225" height="225" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# ⚙️ Product Manager — Backend
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+API REST do sistema de gerenciamento de produtos, categorias e usuários. Construída com **NestJS** e **Prisma**, com autenticação JWT, controle de acesso por perfis, auditoria automática, upload de arquivos e notificações.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📋 Índice
 
-## Project setup
+- [Visão Geral](#-visão-geral)
+- [Tecnologias](#-tecnologias)
+- [Modelagem de Dados](#-modelagem-de-dados)
+- [Regras de Negócio](#-regras-de-negócio)
+- [Pré-requisitos](#-pré-requisitos)
+- [Como Rodar](#-como-rodar)
+- [Documentação da API](#-documentação-da-api)
+- [Credenciais para Teste](#-credenciais-para-teste)
+- [Upload de Arquivos](#-upload-de-arquivos)
+- [Auditoria](#-auditoria)
+- [Fluxo Git](#-fluxo-git)
 
-```bash
-$ npm install
+---
+
+## 🔭 Visão Geral
+
+O backend do **Product Manager** expõe uma API REST que gerencia usuários, produtos e categorias, com dois perfis de acesso — **USER** e **ADMIN**. Toda operação de escrita é registrada automaticamente em logs de auditoria, e notificações são geradas quando um usuário interage com recursos de outro.
+
+---
+
+## 🚀 Tecnologias
+
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| NestJS | ^11 | Framework principal |
+| Prisma | ^7 | ORM |
+| PostgreSQL | 15 | Banco de dados |
+| JWT + Passport | — | Autenticação |
+| Bcrypt | — | Hash de senhas |
+| Multer | — | Upload de arquivos |
+| Class Validator | — | Validação de DTOs |
+| Swagger | — | Documentação interativa da API |
+| Faker.js | — | Seed de dados fictícios |
+
+---
+
+## 🗄️ Modelagem de Dados
+
+```
+User
+├── id (uuid)
+├── name (string)
+├── email (string, unique)
+├── password (string, hashed)
+├── role (USER | ADMIN)
+├── avatar (string, optional)
+├── createdAt
+└── updatedAt
+
+Category
+├── id (uuid)
+├── name (string)
+├── ownerId → User
+├── createdAt
+└── updatedAt
+
+Product
+├── id (uuid)
+├── name (string)
+├── description (string, optional)
+├── imageUrl (string, optional)
+├── ownerId → User
+├── createdAt
+└── updatedAt
+
+ProductCategory (N:N)
+├── productId → Product
+└── categoryId → Category
+
+Favorite (N:N)
+├── userId → User
+└── productId → Product
+
+AuditLog
+├── id (uuid)
+├── action (CREATE | UPDATE | DELETE)
+├── entity (User | Product | Category)
+├── entityId (string)
+├── performedBy → User
+└── createdAt
+
+Notification
+├── id (uuid)
+├── message (string)
+├── read (boolean)
+├── userId → User (destinatário)
+└── createdAt
 ```
 
-## Compile and run the project
+### Relacionamentos
+
+- Um **Usuário** pode possuir N **Produtos**
+- Um **Usuário** pode possuir N **Categorias**
+- Um **Produto** pode pertencer a N **Categorias** (via `ProductCategory`)
+- Um **Usuário** pode favoritar N **Produtos** (via `Favorite`)
+
+---
+
+## 📐 Regras de Negócio
+
+### Perfil USER
+- Pode cadastrar Produtos e criar Categorias
+- Pode visualizar todos os Produtos e Categorias do sistema
+- Pode favoritar N Produtos
+- Só pode editar e deletar seus próprios recursos
+
+### Perfil ADMIN
+- Pode cadastrar, editar e deletar Usuários
+- Pode editar e deletar qualquer recurso do sistema
+- Pode gerar relatórios detalhados de auditoria
+- Tem acesso à visão geral do sistema (totais de Produtos, Categorias e Usuários)
+
+---
+
+## 📦 Pré-requisitos
+
+- [Docker](https://www.docker.com/) — versão 24 ou superior
+- [Docker Compose](https://docs.docker.com/compose/) — versão 2 ou superior
+
+> Node.js **não é necessário localmente**. Tudo roda dentro dos containers, incluindo migrations e seed.
+
+---
+
+## ▶️ Como Rodar
+
+### 1. Clone o repositório
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone https://github.com/seu-usuario/fullstack-challenge.git
+cd fullstack-challenge
 ```
 
-## Run tests
+### 2. Suba o ambiente completo
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose up --build
 ```
 
-## Deployment
+Isso irá:
+- Subir o banco PostgreSQL
+- Executar as migrations automaticamente
+- Popular o banco com dados de seed via Faker.js
+- Iniciar o backend na porta `3001`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Aguarde até ver:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```
+🚀 Application is running!
+📦 Backend:  http://localhost:3001
+🗄️  Database: PostgreSQL connected
+```
+
+### Parar o ambiente
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose down
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Reset completo (apaga volumes)
 
-## Resources
+```bash
+docker compose down -v
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### Comandos úteis
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+# Ver logs do backend
+docker logs challenge_backend -f
 
-## Support
+# Acessar o banco de dados
+docker exec -it challenge_db psql -U postgres -d challenge_db
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## 📡 Documentação da API
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+A documentação interativa está disponível via **Swagger** em http://localhost:3001/api após subir o Docker.
 
-## License
+Para testar rotas protegidas no Swagger:
+1. Clique em **Authorize** no canto superior direito
+2. Cole o token JWT obtido em `POST /auth/login`
+3. Clique em **Authorize** e feche o modal
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Autenticação
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| POST | `/auth/register` | Criar conta | ❌ |
+| POST | `/auth/login` | Login, retorna JWT | ❌ |
+
+### Usuários
+
+| Método | Endpoint | Descrição | Auth | Role |
+|--------|----------|-----------|------|------|
+| GET | `/users` | Listar usuários | ✅ | ANY |
+| GET | `/users/:id` | Buscar usuário | ✅ | ANY |
+| POST | `/users` | Criar usuário | ✅ | ADMIN |
+| PATCH | `/users/:id` | Atualizar usuário | ✅ | ADMIN |
+| DELETE | `/users/:id` | Deletar usuário | ✅ | ADMIN |
+
+**Query params em `GET /users`:** `page`, `limit`, `search`, `role`
+
+### Categorias
+
+| Método | Endpoint | Descrição | Auth | Role |
+|--------|----------|-----------|------|------|
+| GET | `/categories` | Listar categorias | ✅ | ANY |
+| GET | `/categories/:id` | Buscar categoria | ✅ | ANY |
+| POST | `/categories` | Criar categoria | ✅ | ANY |
+| PATCH | `/categories/:id` | Atualizar categoria | ✅ | ANY |
+| DELETE | `/categories/:id` | Deletar categoria | ✅ | ANY |
+
+**Query params em `GET /categories`:** `page`, `limit`, `search`
+
+### Produtos
+
+| Método | Endpoint | Descrição | Auth | Role |
+|--------|----------|-----------|------|------|
+| GET | `/products` | Listar produtos | ✅ | ANY |
+| GET | `/products/favorites` | Listar favoritos do usuário | ✅ | ANY |
+| GET | `/products/:id` | Buscar produto | ✅ | ANY |
+| POST | `/products` | Criar produto | ✅ | ANY |
+| PATCH | `/products/:id` | Atualizar produto | ✅ | ANY |
+| DELETE | `/products/:id` | Deletar produto | ✅ | ANY |
+| POST | `/products/:id/favorite` | Favoritar/desfavoritar | ✅ | ANY |
+
+**Query params em `GET /products`:** `page`, `limit`, `search`, `categoryId`
+
+### Upload
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| POST | `/upload/user/avatar` | Upload de avatar | ✅ |
+| POST | `/upload/product/:id/image` | Upload de imagem do produto | ✅ |
+
+> Requisições de upload devem usar `multipart/form-data` com o campo `file`.
+
+### Auditoria
+
+| Método | Endpoint | Descrição | Auth | Role |
+|--------|----------|-----------|------|------|
+| GET | `/audit-logs` | Listar logs de auditoria | ✅ | ADMIN |
+
+**Query params:** `page`, `limit`, `entity` (`User` | `Product` | `Category`), `action` (`CREATE` | `UPDATE` | `DELETE`), `userId`
+
+### Notificações
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| GET | `/notifications` | Listar notificações do usuário | ✅ |
+| PATCH | `/notifications/:id/read` | Marcar como lida | ✅ |
+| PATCH | `/notifications/read-all` | Marcar todas como lidas | ✅ |
+
+---
+
+## 🔐 Credenciais para Teste
+
+As seguintes contas são criadas automaticamente pelo seed:
+
+| Perfil | E-mail | Senha |
+|--------|--------|-------|
+| ADMIN | `admin@admin.com` | `123456` |
+| USER | `user@user.com` | `123456` |
+
+---
+
+## 📁 Upload de Arquivos
+
+Os arquivos são armazenados localmente na pasta `/uploads` dentro do container e servidos como assets estáticos via `/uploads`.
+
+### Como testar via Insomnia/Postman
+
+1. Método: `POST`
+2. URL: `http://localhost:3001/upload/user/avatar`
+3. Auth: Bearer Token com o JWT
+4. Body: `Form Data` → campo `file` → tipo `File` → selecione a imagem
+
+Após o upload, o campo `avatar` ou `imageUrl` do registro é atualizado automaticamente.
+
+> ⚠️ Os arquivos ficam dentro do container. Ao rodar `docker compose down -v`, os arquivos são perdidos. Para persistência, configure um volume externo.
+
+---
+
+## 📊 Auditoria
+
+O sistema rastreia automaticamente todas as operações de escrita:
+
+| Ação | Quando é registrada |
+|------|---------------------|
+| `CREATE` | Ao criar um usuário, produto ou categoria |
+| `UPDATE` | Ao atualizar qualquer entidade |
+| `DELETE` | Ao deletar qualquer entidade |
+
+Cada log contém:
+- **Quem** realizou a ação (usuário + e-mail)
+- **O que** foi feito (ação + entidade)
+- **Qual registro** foi afetado (`entityId`)
+- **Quando** aconteceu (timestamp)
+
+---
+
+## 🌿 Fluxo Git
+
+```
+main          ← código estável
+develop       ← branch de integração
+  └── feature/*
+  └── chore/*
+  └── docs/*
+```
+
+### Convenção de commits
+
+```
+feat: nova funcionalidade
+fix: correção de bug
+chore: configuração, setup
+docs: documentação
+refactor: refatoração sem mudança de comportamento
+```
+
+### Branches do backend
+
+| Branch | Descrição |
+|--------|-----------|
+| `chore/project-setup` | Scaffold inicial do monorepo |
+| `feature/database-schema` | Schema Prisma e migrations |
+| `feature/auth-jwt` | Autenticação JWT com guards |
+| `feature/crud-users` | CRUD de usuários |
+| `feature/crud-categories` | CRUD de categorias |
+| `feature/crud-products` | CRUD de produtos com favoritos |
+| `feature/audit-log` | Sistema de auditoria |
+| `feature/file-upload` | Upload de arquivos |
+| `feature/notifications` | Notificações ao dono do recurso |
+| `feature/swagger` | Documentação com Swagger |
+| `feature/seed` | Seed com dados fictícios via Faker.js |
