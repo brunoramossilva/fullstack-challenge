@@ -10,6 +10,8 @@ import {
   Typography,
 } from "@uigovpe/components";
 import api from "@/lib/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface AuditLog {
   id: string;
@@ -79,6 +81,57 @@ export default function AuditPage() {
     setPage(1);
   }
 
+  function handleExportPDF() {
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("Relatório de Auditoria — Product Manager", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 28);
+
+    if (entity || action) {
+      const filtros = [
+        entity ? `Entidade: ${entity}` : "",
+        action ? `Ação: ${action}` : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+      doc.text(`Filtros aplicados: ${filtros}`, 14, 34);
+    }
+
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: entity || action ? 40 : 34,
+      head: [
+        [
+          "Usuário",
+          "E-mail",
+          "Ação",
+          "Entidade",
+          "ID do Registro",
+          "Data/Hora",
+        ],
+      ],
+      body: logs.map((log) => [
+        log.user.name,
+        log.user.email,
+        log.action,
+        log.entity,
+        log.entityId.slice(0, 8) + "...",
+        new Date(log.createdAt).toLocaleString("pt-BR"),
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [37, 99, 235] },
+      alternateRowStyles: { fillColor: [241, 245, 249] },
+    });
+
+    const filename = `auditoria-${new Date().toISOString().split("T")[0]}.pdf`;
+    doc.save(filename);
+  }
+
   return (
     <>
       <section className="mb-6">
@@ -90,7 +143,7 @@ export default function AuditPage() {
         </Typography>
       </section>
 
-      {/* Filtros / Relatório */}
+      {/* Filters / Report */}
       <Card elevation="low" className="mb-4">
         <Typography variant="h2" className="mb-4 dashboard-title">
           Filtros
@@ -122,12 +175,12 @@ export default function AuditPage() {
               }}
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button label="Limpar Filtros" onClick={handleClear} />
+            <Button label="Exportar PDF" onClick={handleExportPDF} />
           </div>
         </div>
-
-        {/* Resumo do relatório */}
+        {/* Report summary */}
         <div className="mt-4 pt-4 border-t border-gray-200">
           <Typography variant="p" className="dashboard-text-secondary text-sm">
             Total de registros encontrados: <strong>{total}</strong>
@@ -137,7 +190,7 @@ export default function AuditPage() {
         </div>
       </Card>
 
-      {/* Tabela de logs */}
+      {/* logs table */}
       <Card elevation="low">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
