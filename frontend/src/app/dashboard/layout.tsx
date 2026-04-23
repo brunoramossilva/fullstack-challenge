@@ -95,8 +95,37 @@ export default function DashboardLayout({
     },
   ];
 
+  const fallbackDisplayName =
+    currentUser?.name?.trim() ||
+    currentUser?.email?.split("@")[0]?.replace(/\./g, " ") ||
+    "Usuário";
+  const [displayName, setDisplayName] = useState(fallbackDisplayName);
+
+  useEffect(() => {
+    setDisplayName(fallbackDisplayName);
+  }, [fallbackDisplayName]);
+
+  useEffect(() => {
+    async function loadCurrentUserName() {
+      if (!currentUser?.id) return;
+
+      try {
+        const { data } = await api.get<{ name?: string }>(
+          `/users/${currentUser.id}`,
+        );
+        if (data.name?.trim()) {
+          setDisplayName(data.name.trim());
+        }
+      } catch {
+        // Mantém o fallback quando não for possível carregar o perfil.
+      }
+    }
+
+    void loadCurrentUserName();
+  }, [currentUser?.id]);
+
   const user = {
-    name: currentUser?.email ?? "Usuário",
+    name: displayName,
     profile: currentUser?.role?.toLowerCase() ?? "user",
   };
 
